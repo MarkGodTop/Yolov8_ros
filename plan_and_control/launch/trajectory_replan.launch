@@ -1,0 +1,11 @@
+<launch>
+
+    <!--trajectory replanning-->>
+    <node pkg="plan_and_control" type="trajectory_replan_node" name="trajectory_replan_node" output="screen" >
+    </node>
+    
+    <!-- visualization -->
+    <!-- <node pkg="rviz" type="rviz" name="rviz" output="screen"
+        args="-d $(find plan_and_control)/rviz/traj.rviz" >
+    </node> -->
+</launch>

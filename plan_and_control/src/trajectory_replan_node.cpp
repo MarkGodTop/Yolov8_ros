@@ -9,7 +9,7 @@ TrajectoryReplanNode::TrajectoryReplanNode(const ros::NodeHandle &nh, const ros:
     yolo_sub_ = 
         nh_.subscribe<yolov8_ros_msgs::BoundingBoxes>("/yolov8/BoundingBoxes",10, &TrajectoryReplanNode::boundingBoxes,this);
     odom_sub_ =
-        nh_.subscribe<nav_msgs::Odometry>("/odom_local_ned",1, &TrajectoryReplanNode::odomCallback,this);
+        nh_.subscribe<nav_msgs::Odometry>("/airsim_node/UnmannedAirplane_1/odom_local_ned",1, &TrajectoryReplanNode::odomCallback,this);
     timer_ = nh_.createTimer(ros::Duration(1/300), &TrajectoryReplanNode::getCircleCenter, this);
 
 }
@@ -22,10 +22,13 @@ void TrajectoryReplanNode::boundingBoxes(const yolov8_ros_msgs::BoundingBoxesCon
 }
 
 void TrajectoryReplanNode::shared_yolo(){
-    while(odom_->pose.pose.position.z > 0.2)
+    if(odom_ == nullptr){
+            return;
+        }
+    while(odom_->pose.pose.position.z < 0)
     {
         // std::lock_guard<std::mutex> lock1(mtx1);
-        if(yolo_ == nullptr){
+        if(odom_ == nullptr){
             return;
         }
         if(stamp3 != yolo_->header.stamp)   
@@ -39,9 +42,10 @@ void TrajectoryReplanNode::shared_yolo(){
                     type_class = "0";
                 if(box.Class == "class_1")
                     type_class = "1";
-                if(box.Class == "class_0")
+                if(box.Class == "class_0"){
                     type_class = "8";
                     client.simFireNavMissile(vehicle, 1, 1, 1, false);
+                }  
                 obj["ObjType"] = type_class;
                 obj["ULPointX"] = static_cast<double>(box.xmin); // xmin
                 obj["ULPointY"] = static_cast<double>(box.ymin); // ymin
@@ -74,13 +78,17 @@ void TrajectoryReplanNode::shared_yolo(){
 }
 
 void TrajectoryReplanNode::publishTopic_dingwei() {  
+    if(odom_ == nullptr){
+        return;
+    }
+    
     // std::lock_guard<std::mutex> lock3(mtx3);
-    while (odom_->pose.pose.position.z > 0.2) {
+    while (odom_->pose.pose.position.z < 0) {
         if(stamp1 != odom_->header.stamp)
         {
-            stamp1 = odom_->header.stamp;
-            uint64_t ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();    
-            client.simUpdateLocalPositionData(vehicle, odom_->pose.pose.position.x, odom_->pose.pose.position.y, odom_->pose.pose.position.z, ms, 7);
+            stamp1 = odom_->header.stamp;  
+            uint64_t ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();  
+            client.simUpdateLocalPositionData(vehicle, odom_->pose.pose.position.x, odom_->pose.pose.position.y, odom_->pose.pose.position.z, ms, 8);
         }      
         // std::this_thread::sleep_for(std::chrono::milliseconds(11));  
     }
@@ -93,7 +101,10 @@ void TrajectoryReplanNode::odomCallback(const nav_msgs::OdometryConstPtr &msg) {
 }
 
 void TrajectoryReplanNode::getCircleCenter(const ros::TimerEvent &e) {
-    if(odom_->pose.pose.position.z > 0.2 && flag1 == 0){
+    if(odom_ == nullptr){
+        return;
+    }
+    if(odom_->pose.pose.position.z < 0 && flag1 == 0){
         flag1 = 1;
         threadPool.enqueue(&TrajectoryReplanNode::publishTopic_dingwei, this);
         threadPool.enqueue(&TrajectoryReplanNode::shared_yolo, this);

@@ -92,9 +92,9 @@ private:
     ros::Time stamp3;
     std::string vehicle = "UnmannedAirplane_1";
     int flag1 = 0;
-    int resX = 640;
-    int resY = 480;
-    std::string cameraName = "Custom_MV_CAMERA_001_01";
+    int resX = 1280;
+    int resY = 800;
+    std::string cameraName = "D455_RGB_01";
 
 public:
 

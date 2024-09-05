@@ -77,7 +77,7 @@ class Yolo_Dect:
     def dectshow(self, results, height, width):
 
         self.frame = results[0].plot()
-        print(str(results[0].speed['inference']))
+        # print(str(results[0].speed['inference']))
         fps = 1000.0/ results[0].speed['inference']
         cv2.putText(self.frame, f'FPS: {int(fps)}', (20,50), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2, cv2.LINE_AA)
 
